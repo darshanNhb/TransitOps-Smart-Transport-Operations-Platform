@@ -7,10 +7,10 @@
 
 | Name | Role | College | Graduation Year | Email / Phone | GitHub |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **[Nirbhay]** | Team Leader | [Nirma University] | 2028 | [24bce268@nirmauni.ac.in](mailto:24bce268@nirmauni.ac.in) / [8320586268] | [@itatshu](https://github.com/itatshu) |
-| **[Het]** | Backend Engineer | [Nirma University] | 2028 | [24bce261@nirmauni.ac.in](mailto:24bce261@nirmauni.ac.in) / [9023226077] | [@Het6518](https://github.com/Het6518) |
-| **[Darshan]** | Full-Stack Engineer | [Nirma University] | 2028 | [24bce233@nirmauni.ac.in](mailto:24bce233@nirmauni.ac.in) / [9328325601] | [@darshanNhb](https://github.com/darshanNhb) |
-| **[Jenil]** | Frontend Engineer | [Nirma University] | 2028 | [24bce267@nirmauni.ac.in](mailto:24bce267@nirmauni.ac.in) / [9316130701] | [@MLinej](https://github.com/MLinej) |
+| **[Darshan Buddhdev]** | Team Leader | [Nirma University] | 2028 | [24bce233@nirmauni.ac.in](mailto:24bce233@nirmauni.ac.in) / [9328325601] | [@darshanNhb](https://github.com/darshanNhb) |
+| **[Jash Patel]** | Backend Engineer | [Nirma University] | 2028 | [24bce222@nirmauni.ac.in](mailto:24bce222@nirmauni.ac.in) / [7984203594] | [@JashPatel29](https://github.com/JashPatel29) |
+| **[Darshit Kamdar]** | Frontend Engineer | [Nirma University] | 2028 | [24bce231@nirmauni.ac.in](mailto:24bce231@nirmauni.ac.in) / [9313760374] | [@Dak-03](https://github.com/Dak-03) |
+| **[Yash Pipaliya]** | Frontend Engineer | [Nirma University] | 2028 | [24bam039@nirmauni.ac.in](mailto:24bam039@nirmauni.ac.in) / [6352625236] | [@yashpipaliya07](https://github.com/yashpipaliya07) |
 
 ---
 
@@ -18,11 +18,10 @@
 
 <p><em>From scattered spreadsheets to unified intelligence — keep your fleet running at peak performance.</em></p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://prisma.io)
-[![SQLite](https://img.shields.io/badge/SQLite-Enabled-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Enabled-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
 
 <br/>
 
@@ -110,7 +109,7 @@ One-click downloadable analytics reports (PDF/CSV) for management, compliance au
                            │ Prisma ORM
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 SQLite Database Layer                       │
+│                 SQLite Database Layer                   │
 │   (Relational Schema with Cascading Deletes & Indexing)     │
 └─────────────────────────────────────────────────────────────┘
 
@@ -147,37 +146,201 @@ One-click downloadable analytics reports (PDF/CSV) for management, compliance au
 ### Database
 | Technology | Purpose |
 |---|---|
-| **SQLite** | Primary relational database |
+| **PostgreSQL** | Primary relational database |
+### Database Schema (ER Diagram)
+
+```mermaid
+erDiagram
+    %% 1. TENANCY MODULE
+    ORGANIZATION {
+        String id PK
+        String name
+        String slug
+        String currency
+    }
+
+    %% 2. AUTHENTICATION & RBAC
+    USER {
+        String id PK
+        String email
+        String status
+        String roleId FK
+        String organizationId FK
+    }
+    ROLE {
+        String id PK
+        String name
+        String organizationId FK
+    }
+    PERMISSION {
+        String id PK
+        String resource
+        String action
+    }
+    ROLE_PERMISSION {
+        String roleId PK, FK
+        String permissionId PK, FK
+    }
+    REFRESH_TOKEN {
+        String id PK
+        String token
+        String userId FK
+    }
+
+    %% 3. FLEET & DRIVER
+    VEHICLE {
+        String id PK
+        String registrationNumber
+        String status
+        Int currentOdometer
+        String organizationId FK
+    }
+    DRIVER {
+        String id PK
+        String employeeCode
+        String status
+        Float safetyScore
+        String organizationId FK
+    }
+    TRIP {
+        String id PK
+        String tripNumber
+        String status
+        String vehicleId FK
+        String driverId FK
+        String organizationId FK
+    }
+
+    %% 4. MAINTENANCE & FUEL
+    MAINTENANCE {
+        String id PK
+        String serviceType
+        String status
+        String vehicleId FK
+    }
+    FUEL_LOG {
+        String id PK
+        Float fuelQuantity
+        Decimal totalCost
+        String vehicleId FK
+    }
+
+    %% 5. FINANCE
+    EXPENSE {
+        String id PK
+        String category
+        Decimal amount
+        String vehicleId FK
+        String tripId FK
+        String maintenanceId FK
+    }
+
+    %% 6. GLOBAL
+    ATTACHMENT {
+        String id PK
+        String fileName
+        String fileUrl
+    }
+    ACTIVITY_LOG {
+        String id PK
+        String action
+        String resource
+    }
+    NOTIFICATION {
+        String id PK
+        String type
+        String status
+    }
+
+    %% ==========================================
+    %% RELATIONSHIPS
+    %% ==========================================
+
+    %% Tenancy Links
+    ORGANIZATION ||--o{ USER : "has"
+    ORGANIZATION ||--o{ ROLE : "has"
+    ORGANIZATION ||--o{ VEHICLE : "owns"
+    ORGANIZATION ||--o{ DRIVER : "employs"
+    ORGANIZATION ||--o{ TRIP : "manages"
+    ORGANIZATION ||--o{ MAINTENANCE : "tracks"
+    ORGANIZATION ||--o{ EXPENSE : "records"
+
+    %% RBAC & Auth Links
+    ROLE ||--o{ USER : "assigned to"
+    ROLE ||--o{ ROLE_PERMISSION : "grants"
+    PERMISSION ||--o{ ROLE_PERMISSION : "included in"
+    USER ||--o{ REFRESH_TOKEN : "authenticates via"
+
+    %% Operations Links
+    VEHICLE ||--o{ TRIP : "dispatched on"
+    DRIVER ||--o{ TRIP : "drives"
+    VEHICLE ||--o{ MAINTENANCE : "undergoes"
+    VEHICLE ||--o{ FUEL_LOG : "consumes"
+
+    %% Finance Links
+    VEHICLE ||--o{ EXPENSE : "incurs"
+    TRIP ||--o{ EXPENSE : "incurs"
+    MAINTENANCE ||--o{ EXPENSE : "incurs"
+
+    %% Global Links
+    USER ||--o{ ACTIVITY_LOG : "generates"
+    USER ||--o{ NOTIFICATION : "receives"
+    VEHICLE ||--o{ ATTACHMENT : "has"
+    DRIVER ||--o{ ATTACHMENT : "has"
+    TRIP ||--o{ ATTACHMENT : "has"
+```
 
 ---
 
 ## 📂 Project Structure
 
 ```
-transitops/
+TransitOps/
 │
-├── backend/
-│   ├── prisma/               # Database schema and seed data
-│   ├── src/
-│   │   ├── config/           # Database and env config
-│   │   ├── controllers/      # API Request handlers
-│   │   ├── middleware/       # Auth and error handling
-│   │   ├── routes/           # API route definitions
-│   │   ├── services/         # Business logic and cron jobs
-│   │   └── server.js         # Express server entry point
-│   └── .env                  # Backend environment variables
+├── backend/                        # Node.js + Express API Server
+│   ├── prisma/
+│   │   ├── migrations/             # Auto-generated database migration history
+│   │   ├── schema.prisma           # Core Database schema (Models & Relations)
+│   │   └── seed.js                 # Script to inject initial mock/admin data
+│   │
+│   ├── src/                        # Main backend source code
+│   │   ├── config/                 # Configurations (Env vars, Logger, Prisma client)
+│   │   ├── constants/              # Global constants and enum values
+│   │   ├── controllers/            # HTTP Handlers (Extracts request data & sends responses)
+│   │   ├── helpers/                # Reusable helper functions (e.g., date formats)
+│   │   ├── middleware/             # Express middlewares (Auth, Error handling, File upload)
+│   │   ├── repositories/           # Data Access Layer (Direct database queries/mutations)
+│   │   ├── routes/                 # API endpoint routing (e.g., /api/v1/vehicles)
+│   │   ├── services/               # Business Logic, Email sending, and Cron Jobs
+│   │   ├── utils/                  # Utility wrappers (ApiError, ApiResponse, Crypto, JWT)
+│   │   ├── validations/            # Zod validation schemas for request bodies
+│   │   ├── app.js                  # Express app initialization & middleware injection
+│   │   └── server.js               # Main Entry Point (Starts the HTTP server)
+│   │
+│   ├── tests/                      # Integration and Unit tests
+│   ├── .env                        # Environment variables (DB URL, JWT, SMTP)
+│   ├── dev.db                      # SQLite local database file
+│   └── package.json                # Backend dependencies and scripts
 │
-├── frontend/
-│   ├── src/
-│   │   ├── api/              # Axios client config
-│   │   ├── components/       # Reusable UI components (Sidebar, Topbar)
-│   │   ├── context/          # React Context (Auth)
-│   │   ├── pages/            # Dashboard, Vehicles, Drivers, Analytics, etc.
-│   │   └── App.jsx           # Root router
-│   └── .env                  # Frontend environment variables
+├── frontend/                       # React.js + Vite Web Application
+│   ├── public/                     # Static assets (Favicons, external images)
+│   ├── src/                        # Main frontend source code
+│   │   ├── api/                    # Axios client config and HTTP interceptors
+│   │   ├── components/             # Reusable UI elements (Sidebar, Topbar, Modals, Inputs)
+│   │   ├── context/                # React Context Providers (AuthContext, ThemeContext)
+│   │   ├── layouts/                # Page wrappers (e.g., MainLayout for protected pages)
+│   │   ├── pages/                  # Full-screen views (Dashboard, Trips, Analytics, etc.)
+│   │   ├── routes/                 # React Router setup (Protected vs Public routes)
+│   │   ├── App.jsx                 # Root component handling routing logic
+│   │   ├── index.css               # Global Tailwind CSS directives and custom styles
+│   │   └── main.jsx                # React DOM rendering entry point
+│   │
+│   ├── vite.config.js              # Vite bundler configuration
+│   ├── .env                        # Frontend env variables (e.g., VITE_API_URL)
+│   └── package.json                # Frontend dependencies and scripts
 │
-├── package.json
-└── README.md
+├── .gitignore                      # Git ignore rules (ignores node_modules, .env, dev.db)
+└── README.md                       # Main project documentation
 ```
 
 ---
@@ -203,7 +366,7 @@ transitops/
 ### Prerequisites
 
 - Node.js `v18+`
-- SQLite (via Prisma)
+- SQLite database
 
 ### Clone the Repository
 
@@ -241,7 +404,7 @@ Create a `.env` file in the `backend/` directory:
 PORT=5000
 
 # Database
-DATABASE_URL=file:./dev.db
+DATABASE_URL=postgresql://user:password@localhost:5432/transitops
 
 # Authentication
 JWT_SECRET=your_jwt_secret_here
@@ -269,9 +432,6 @@ VITE_API_URL=http://localhost:5000/api/v1
 - [ ] **AI-Powered Route Optimization** — ML models to predict most efficient delivery routes
 - [ ] **Advanced RBAC** — Dynamic role creation and fine-grained permissions
 
-## 📜 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 

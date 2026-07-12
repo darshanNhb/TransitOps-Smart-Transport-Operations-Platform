@@ -21,7 +21,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://prisma.io)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Enabled-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![SQLite](https://img.shields.io/badge/SQLite-Enabled-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
 
 <br/>
 
@@ -42,7 +42,6 @@
 - [Installation](#-installation)
 - [Environment Variables](#-environment-variables)
 - [Future Roadmap](#-future-roadmap)
-- [License](#-license)
 
 ---
 

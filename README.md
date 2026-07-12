@@ -122,30 +122,71 @@ One-click downloadable analytics reports (PDF/CSV) for management, compliance au
 
 ## 💻 Tech Stack
 
-### Frontend
-| Technology | Purpose |
-|---|---|
-| **React.js 18** | UI framework |
-| **Tailwind CSS** | Styling and responsive layout |
-| **React Hook Form** | Form validation and state management |
-| **Zod** | Schema validation |
-| **Recharts** | Analytics visualizations |
-| **jsPDF & autoTable** | PDF Report Generation |
+### 🎨 Frontend
 
-### Backend
 | Technology | Purpose |
-|---|---|
-| **Node.js + Express.js** | REST API server |
-| **Prisma ORM** | Database access layer & Schema migrations |
-| **JWT** | Secure session authentication |
-| **Bcrypt** | Password hashing |
-| **Node-Cron** | Automated background tasks |
-| **Nodemailer** | SMTP email notifications |
+|------------|---------|
+| **React 19** | Component-based user interface development |
+| **Vite** | Lightning-fast development server and optimized build tool |
+| **Tailwind CSS** | Utility-first responsive styling framework |
+| **React Router DOM** | Client-side routing and navigation |
+| **React Hook Form** | Efficient form state management and validation |
+| **Zod** | Type-safe schema validation |
+| **Axios** | HTTP client for REST API communication |
+| **Recharts** | Interactive analytics and visualization charts |
+| **Lucide React** | Modern, customizable icon library |
+| **jsPDF + AutoTable** | PDF report generation and tabular exports |
 
-### Database
+---
+
+### ⚙ Backend
+
 | Technology | Purpose |
-|---|---|
-| **PostgreSQL** | Primary relational database |
+|------------|---------|
+| **Node.js** | JavaScript runtime environment |
+| **Express.js** | RESTful API development framework |
+| **Prisma ORM** | Type-safe database access and schema management |
+| **SQLite** | Lightweight relational database |
+| **JWT (jsonwebtoken)** | Secure user authentication and authorization |
+| **Bcrypt** | Password hashing and security |
+| **Node-Cron** | Scheduled background jobs and automation |
+| **Nodemailer** | SMTP email notifications and alerts |
+| **Morgan** | HTTP request logging |
+| **CORS** | Cross-origin resource sharing support |
+| **Dotenv** | Environment variable management |
+
+---
+
+### 🗄 Database
+
+| Technology | Purpose |
+|------------|---------|
+| **SQLite** | Primary relational database |
+| **Prisma Migrate** | Database schema migrations |
+| **Prisma Client** | Type-safe database queries |
+
+---
+
+### 📊 Reports & Analytics
+
+| Technology | Purpose |
+|------------|---------|
+| **Recharts** | Revenue, ROI, and expense visualizations |
+| **jsPDF** | PDF report generation |
+| **AutoTable** | Export structured reports as tables |
+
+---
+
+### 🛠 Development Tools
+
+| Technology | Purpose |
+|------------|---------|
+| **Git & GitHub** | Version control and collaboration |
+| **Postman** | REST API testing |
+| **ESLint** | Code quality and linting |
+| **Prettier** | Code formatting |
+| **npm** | Package management |
+
 ### Database Schema (ER Diagram)
 
 ```mermaid

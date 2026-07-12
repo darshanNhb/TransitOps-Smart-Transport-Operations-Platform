@@ -1,0 +1,638 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =============================================================
+// 1. TENANCY MODULE
+// =============================================================
+
+model Organization {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  timezone  String    @default("UTC")
+  currency  String    @default("USD")
+  website   String?
+  logoUrl   String?
+  taxNumber String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  users              User[]
+  roles              Role[]
+  vehicles           Vehicle[]
+  drivers            Driver[]
+  trips              Trip[]
+  maintenanceRecords Maintenance[]
+  fuelLogs           FuelLog[]
+  expenses           Expense[]
+  attachments        Attachment[]
+  notifications      Notification[]
+  activityLogs       ActivityLog[]
+}
+
+// =============================================================
+// 2. AUTHENTICATION & SECURITY (RBAC)
+// =============================================================
+
+model Role {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  users        User[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  resource    String // e.g. "vehicle", "driver", "trip", "maintenance"
+  action      String // e.g. "create", "read", "update", "delete", "dispatch", "approve"
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model User {
+  id                     String     @id @default(uuid())
+  name                   String
+  email                  String     @unique
+  passwordHash           String
+  status                 UserStatus @default(ACTIVE)
+  failedLoginAttempts    Int        @default(0)
+  lockoutUntil           DateTime?
+  passwordChangedAt      DateTime?
+  lastLoginAt            DateTime?
+  emailVerifiedAt        DateTime?
+  emailVerificationToken String?    @unique
+  passwordResetToken     String?    @unique
+  passwordResetExpires   DateTime?
+  roleId                 String
+  organizationId         String
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  deletedAt              DateTime?
+
+  // Relations
+  role          Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+
+  // Audit Relations
+  createdVehicles     Vehicle[]     @relation("VehicleCreated")
+  updatedVehicles     Vehicle[]     @relation("VehicleUpdated")
+  deletedVehicles     Vehicle[]     @relation("VehicleDeleted")
+  createdDrivers      Driver[]      @relation("DriverCreated")
+  updatedDrivers      Driver[]      @relation("DriverUpdated")
+  deletedDrivers      Driver[]      @relation("DriverDeleted")
+  createdTrips        Trip[]        @relation("TripCreated")
+  updatedTrips        Trip[]        @relation("TripUpdated")
+  deletedTrips        Trip[]        @relation("TripDeleted")
+  createdMaintenances Maintenance[] @relation("MaintenanceCreated")
+  updatedMaintenances Maintenance[] @relation("MaintenanceUpdated")
+  deletedMaintenances Maintenance[] @relation("MaintenanceDeleted")
+  createdFuelLogs     FuelLog[]     @relation("FuelLogCreated")
+  updatedFuelLogs     FuelLog[]     @relation("FuelLogUpdated")
+  deletedFuelLogs     FuelLog[]     @relation("FuelLogDeleted")
+  createdExpenses     Expense[]     @relation("ExpenseCreated")
+  updatedExpenses     Expense[]     @relation("ExpenseUpdated")
+  deletedExpenses     Expense[]     @relation("ExpenseDeleted")
+  approvedExpenses    Expense[]     @relation("ExpenseApproved")
+  createdAttachments  Attachment[]  @relation("AttachmentCreated")
+
+  @@index([organizationId])
+  @@index([roleId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  jti       String    @unique
+  userId    String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  ipAddress String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// =============================================================
+// 3. FLEET & DRIVER OPERATIONAL MODULES
+// =============================================================
+
+model Vehicle {
+  id                    String        @id @default(uuid())
+  registrationNumber    String
+  vehicleNumber         String
+  name                  String
+  manufacturer          String
+  model                 String
+  manufacturingYear     Int
+  VIN                   String?
+  engineNumber          String?
+  chassisNumber         String?
+  insuranceProvider     String?
+  insurancePolicyNumber String?
+  insuranceExpiry       DateTime?
+  fitnessExpiry         DateTime?
+  currentOdometer       Int           @default(0)
+  GPSDeviceId           String?
+  fuelType              FuelType
+  payloadCapacity       Float // Payload capacity in kg
+  purchaseCost          Decimal // Exact financial cost
+  purchaseDate          DateTime
+  status                VehicleStatus @default(AVAILABLE)
+  availability          Boolean       @default(true)
+  color                 String?
+  organizationId        String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("VehicleCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("VehicleUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("VehicleDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  trips        Trip[]
+  maintenances Maintenance[]
+  fuelLogs     FuelLog[]
+  expenses     Expense[]
+  attachments  Attachment[]
+
+  @@unique([organizationId, vehicleNumber])
+  @@unique([organizationId, registrationNumber])
+  @@index([organizationId, status, availability])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([deletedById])
+}
+
+model Driver {
+  id                       String          @id @default(uuid())
+  employeeCode             String
+  name                     String
+  email                    String
+  phone                    String
+  address                  String?
+  dateOfBirth              DateTime
+  joiningDate              DateTime
+  experience               Int // Experience in years
+  salary                   Decimal // Exact financial cost
+  licenseNumber            String
+  licenseCategory          LicenseCategory
+  licenseExpiry            DateTime
+  bloodGroup               String?
+  emergencyContactName     String?
+  emergencyContactNumber   String?
+  governmentId             String?
+  photoUrl                 String?
+  medicalCertificateExpiry DateTime?
+  status                   DriverStatus    @default(AVAILABLE)
+  availability             Boolean         @default(true)
+  safetyScore              Float           @default(100.0)
+  organizationId           String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("DriverCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("DriverUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("DriverDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  trips       Trip[]
+  attachments Attachment[]
+
+  @@unique([organizationId, employeeCode])
+  @@unique([organizationId, licenseNumber])
+  @@unique([organizationId, email])
+  @@index([organizationId, status, availability])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([deletedById])
+}
+
+model Trip {
+  id              String     @id @default(uuid())
+  tripNumber      String
+  vehicleId       String
+  driverId        String
+  origin          String
+  destination     String
+  plannedDistance Float
+  actualDistance  Float?
+  cargoWeight     Float
+  estimatedFuel   Float
+  actualFuel      Float?
+  startOdometer   Int
+  endOdometer     Int?
+  dispatchTime    DateTime
+  expectedArrival DateTime
+  actualArrival   DateTime?
+  completionTime  DateTime?
+  revenue         Decimal
+  tripType        TripType
+  status          TripStatus @default(SCHEDULED)
+  notes           String?
+  organizationId  String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver       Driver       @relation(fields: [driverId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("TripCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("TripUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("TripDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  expenses    Expense[]
+  attachments Attachment[]
+
+  @@unique([organizationId, tripNumber])
+  @@index([organizationId, status, dispatchTime])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([deletedById])
+}
+
+// =============================================================
+// 4. MAINTENANCE & FUEL OPERATIONS LOGS
+// =============================================================
+
+model Maintenance {
+  id              String            @id @default(uuid())
+  vehicleId       String
+  vendor          String
+  serviceType     String
+  priority        Priority
+  invoiceNumber   String?
+  invoiceDate     DateTime?
+  description     String
+  remarks         String?
+  cost            Decimal
+  startDate       DateTime
+  completionDate  DateTime?
+  nextServiceDate DateTime?
+  status          MaintenanceStatus @default(SCHEDULED)
+  organizationId  String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("MaintenanceCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("MaintenanceUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("MaintenanceDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  expenses    Expense[]
+  attachments Attachment[]
+
+  @@index([organizationId, status, startDate])
+  @@index([vehicleId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([deletedById])
+}
+
+model FuelLog {
+  id              String   @id @default(uuid())
+  vehicleId       String
+  fuelType        FuelType
+  fuelQuantity    Float
+  pricePerLiter   Decimal
+  totalCost       Decimal
+  receiptNumber   String?
+  fuelStation     String?
+  odometerReading Int
+  filledById      String? // Relates to User (audit)
+  date            DateTime
+  organizationId  String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("FuelLogCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("FuelLogUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("FuelLogDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, date])
+  @@index([vehicleId])
+  @@index([createdById])
+}
+
+// =============================================================
+// 5. FINANCE (EXPENSE) MODULE
+// =============================================================
+
+model Expense {
+  id             String          @id @default(uuid())
+  vehicleId      String?
+  tripId         String?
+  maintenanceId  String?
+  amount         Decimal
+  category       ExpenseCategory
+  description    String
+  paymentMethod  PaymentMethod
+  approvedById   String?
+  date           DateTime
+  organizationId String
+
+  // Audit Fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+  deletedById String?
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  trip         Trip?        @relation(fields: [tripId], references: [id], onDelete: Restrict)
+  maintenance  Maintenance? @relation(fields: [maintenanceId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("ExpenseCreated", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("ExpenseUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  deletedBy    User?        @relation("ExpenseDeleted", fields: [deletedById], references: [id], onDelete: SetNull)
+  approvedBy   User?        @relation("ExpenseApproved", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  attachments Attachment[]
+
+  @@index([organizationId, date, category])
+  @@index([vehicleId])
+  @@index([tripId])
+  @@index([maintenanceId])
+  @@index([approvedById])
+  @@index([createdById])
+}
+
+// =============================================================
+// 6. GLOBAL ASSETS, NOTIFICATIONS & AUDIT TRAILS
+// =============================================================
+
+model Attachment {
+  id             String @id @default(uuid())
+  fileName       String
+  fileType       String // MIME type
+  fileSize       Int // File size in bytes
+  fileUrl        String
+  storageKey     String // S3 or object storage key
+  organizationId String
+
+  // Relational context (Polymorphic referential design)
+  vehicleId     String?
+  driverId      String?
+  tripId        String?
+  maintenanceId String?
+  expenseId     String?
+
+  createdById String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver       Driver?      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  trip         Trip?        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  maintenance  Maintenance? @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+  expense      Expense?     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("AttachmentCreated", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([maintenanceId])
+  @@index([expenseId])
+  @@index([createdById])
+}
+
+model Notification {
+  id             String             @id @default(uuid())
+  userId         String
+  title          String
+  message        String
+  type           NotificationType
+  status         NotificationStatus @default(UNREAD)
+  priority       Priority           @default(MEDIUM)
+  link           String?
+  metadata       Json?
+  expiresAt      DateTime?
+  readAt         DateTime?
+  organizationId String
+  createdAt      DateTime           @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, status])
+}
+
+model ActivityLog {
+  id             String   @id @default(uuid())
+  userId         String?
+  action         String // e.g. "CREATE", "UPDATE", "DELETE", "LOGIN"
+  resource       String // e.g. "Vehicle", "Driver", "Trip", "Expense"
+  resourceId     String
+  oldData        Json? // Stores previous state payload
+  newData        Json? // Stores updated state payload
+  ipAddress      String?
+  userAgent      String?
+  sessionId      String?
+  requestId      String?
+  timestamp      DateTime @default(now())
+  organizationId String
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, resource, action, timestamp])
+  @@index([userId])
+}
+
+// =============================================================
+// GLOBAL ENUMS
+// =============================================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  IN_MAINTENANCE
+  RETIRED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  SUSPENDED
+}
+
+enum TripStatus {
+  SCHEDULED
+  DISPATCHED
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FuelType {
+  DIESEL
+  UNLEADED
+  PREMIUM
+  ELECTRIC
+  CNG
+}
+
+enum ExpenseCategory {
+  FUEL
+  INSURANCE
+  SERVICE
+  REPAIRS
+  SALARY
+  PARKING
+  TOLL
+  MISCELLANEOUS
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  FUEL_CARD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum LicenseCategory {
+  CLASS_A
+  CLASS_B
+  CLASS_C
+  CLASS_D
+  COMMERCIAL
+  HEAVY_VEHICLE
+}
+
+enum TripType {
+  OUTBOUND
+  INBOUND
+  LOCAL
+  INTERSTATE
+}
+
+enum NotificationType {
+  LICENSE_EXPIRY
+  INSURANCE_EXPIRY
+  MAINTENANCE_DUE
+  TRIP_ASSIGNED
+  TRIP_COMPLETED
+  SYSTEM_ALERT
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
